@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear y Traducir Idioma</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f0f8ff;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    button, input {
+      font-size: 18px;
+      padding: 10px;
+      margin: 10px;
+      width: 100%;
+      max-width: 400px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    #resultado, #idiomas, #mensaje {
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      color: #27ae60;
+    }
+    #idiomas {
+      margin-top: 20px;
+    }
+    #mensaje {
+      color: #e74c3c;
+      font-size: 20px;
+      background-color: #f39c12;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+      border-radius: 10px;
+    }
+    #advertencia {
+      background-color: #fce4b5;
+      padding: 10px;
+      margin-top: 20px;
+      border: 2px solid #e67e22;
+      border-radius: 5px;
+    }
+    #advertencia h3 {
+      margin: 0;
+    }
+
+    /* Barra superior */
+    #barraSuperior {
+      background-color: #2c3e50;
+      padding: 10px 20px;
+      color: white;
+      text-align: center;
+    }
+    #barraSuperior button {
+      background-color: #f39c12;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    #barraSuperior button:hover {
+      background-color: #e67e22;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Barra superior con opciones de registro e inicio de sesión -->
+  <div id="barraSuperior">
+    <button onclick="mostrarRegistro()">Registrarse</button>
+    <button onclick="mostrarLogin()">Iniciar sesión</button>
+  </div>
+
+  <div id="mensaje">
+    <strong>Atención!</strong> Si usted no se registra, la información no se guardará.
+  </div>
+
+  <h1>Bienvenido a tu Traductor de Idiomas</h1>
+
+  <div id="registro" style="display:none;">
+    <h2>Regístrate</h2>
+    <input type="text" id="usuario" placeholder="Nombre de usuario">
+    <input type="password" id="contrasena" placeholder="Contraseña">
+    <button onclick="registrarse()">Registrarse</button>
+    <button onclick="mostrarLogin()">Ya tengo cuenta, Iniciar sesión</button>
+  </div>
+
+  <div id="login" style="display:none;">
+    <h2>Iniciar sesión</h2>
+    <input type="text" id="usuarioLogin" placeholder="Nombre de usuario">
+    <input type="password" id="contrasenaLogin" placeholder="Contraseña">
+    <button onclick="iniciarSesion()">Iniciar sesión</button>
+  </div>
+
+  <div id="crearIdioma" style="display:none;">
+    <h2>Crear Tu Propio Idioma</h2>
+    <input type="text" id="nombreIdioma" placeholder="¿Cómo se llama tu idioma?" oninput="guardarNombreIdioma()">
+    <button id="botonCrearNuevoIdioma" style="display:none;" onclick="crearNuevoIdioma()">Crear Nuevo Idioma</button>
+    <div id="agregarPalabras" style="display:none;">
+      <input type="text" id="palabraEspañol" placeholder="Palabra en español">
+      <input type="text" id="palabraIdioma" placeholder="Palabra en tu idioma">
+      <button onclick="guardarTraduccion()">Guardar Traducción</button>
+    </div>
+    <button id="botonTraducir" style="display:none;" onclick="mostrarTraducir()">Traducir al Idioma Creado</button>
+  </div>
+
+  <div id="traducirIdioma" style="display:none;">
+    <h2>Traducir al Idioma Creado</h2>
+    <input type="text" id="entrada" placeholder="Escribe una palabra en español">
+    <button onclick="traducir()">Traducir</button>
+    <div id="resultado"></div>
+  </div>
+
+  <div id="idiomas"></div>
+
+  <script>
+    let idiomas = {};  // Almacenará los idiomas creados
+    let idiomaActivo = '';  // Idioma actual activo
+    let usuarioActivo = null;  // Almacena el usuario actual
+
+    // Al iniciar, intentar cargar usuario y datos guardados
+    window.onload = function() {
+      cargarUsuario();
+      cargarIdiomas();
+    };
+
+    // Cargar el usuario desde LocalStorage
+    function cargarUsuario() {
+      const usuarioGuardado = localStorage.getItem('usuario');
+      const contrasenaGuardada = localStorage.getItem('contrasena');
+      if (usuarioGuardado && contrasenaGuardada) {
+        usuarioActivo = { usuario: usuarioGuardado, contrasena: contrasenaGuardada };
+        mostrarOpciones();
+      } else {
+        mostrarLogin();
+      }
+    }
+
+    // Mostrar el formulario de registro
+    function mostrarRegistro() {
+      document.getElementById("registro").style.display = 'block';
+      document.getElementById("login").style.display = 'none';
+      document.getElementById("crearIdioma").style.display = 'none';
+      document.getElementById("traducirIdioma").style.display = 'none';
+      document.getElementById("mensaje").innerText = 'Por favor, regístrate para comenzar.';
+    }
+
+    // Mostrar el formulario de login
+    function mostrarLogin() {
+      document.getElementById("login").style.display = 'block';
+      document.getElementById("registro").style.display = 'none';
+      document.getElementById("crearIdioma").style.display = 'none';
+      document.getElementById("traducirIdioma").style.display = 'none';
+      document.getElementById("mensaje").innerText = 'Por favor, ingresa tus credenciales.';
+    }
+
+    // Registro de usuario
+    function registrarse() {
+      const usuario = document.getElementById("usuario").value.trim();
+      const contrasena = document.getElementById("contrasena").value.trim();
+      
+      if (usuario && contrasena) {
+        // Guardar usuario en LocalStorage
+        localStorage.setItem('usuario', usuario);
+        localStorage.setItem('contrasena', contrasena);
+        
+        usuarioActivo = { usuario, contrasena };
+        alert('¡Registro exitoso! Ahora puedes comenzar a crear idiomas.');
+        
+        mostrarOpciones();
+      } else {
+        alert('Por favor, ingresa un nombre de usuario y una contraseña.');
+      }
+    }
+
+    // Inicio de sesión de usuario
+    function iniciarSesion() {
+      const usuario = document.getElementById("usuarioLogin").value.trim();
+      const contrasena = document.getElementById("contrasenaLogin").value.trim();
+      
+      const usuarioGuardado = localStorage.getItem('usuario');
+      const contrasenaGuardada = localStorage.getItem('contrasena');
+      
+      if (usuario === usuarioGuardado && contrasena === contrasenaGuardada) {
+        usuarioActivo = { usuario, contrasena };
+        alert('¡Bienvenido de nuevo!');
+        mostrarOpciones();
+      } else {
+        alert('Credenciales incorrectas. Por favor, intenta de nuevo.');
+      }
+    }
+
+    // Mostrar opciones (crear idioma o traducir)
+    function mostrarOpciones() {
+      document.getElementById("login").style.display = 'none';
+      document.getElementById("registro").style.display = 'none';
+      document.getElementById("mensaje").innerHTML = 'Elige una opción: Crear Idioma o Traducir Idioma';
+
+      let opciones = `
+        <button onclick="mostrarCrearIdioma()">Crear Idioma</button>
+        <button onclick="mostrarTraducir()">Traducir Idioma</button>
+      `;
+      document.getElementById("mensaje").innerHTML = opciones;
+    }
+
+    // Mostrar la opción para crear un idioma
+    function mostrarCrearIdioma() {
+      document.getElementById("crearIdioma").style.display = 'block';
+      document.getElementById("traducirIdioma").style.display = 'none';
+      document.getElementById("botonCrearNuevoIdioma").style.display = 'none';
+      document.getElementById("agregarPalabras").style.display = 'none';
+      document.getElementById("botonTraducir").style.display = 'none';
+    }
+
+    // Mostrar la opción para traducir
+    function mostrarTraducir() {
+      if (idiomaActivo === '') {
+        alert('No has creado un idioma aún.');
+      } else {
+        document.getElementById("traducirIdioma").style.display = 'block';
+        document.getElementById("crearIdioma").style.display = 'none';
+      }
+    }
+
+    // Guardar el nombre del idioma
+    function guardarNombreIdioma() {
+      const nombreIdioma = document.getElementById("nombreIdioma").value.trim();
+
+      if (nombreIdioma) {
+        idiomaActivo = nombreIdioma;
+        document.getElementById("botonCrearNuevoIdioma").style.display = 'block';
+        document.getElementById("agregarPalabras").style.display = 'block';
+        document.getElementById("botonTraducir").style.display = 'block';
+      } else {
+        document.getElementById("botonCrearNuevoIdioma").style.display = 'none';
+        document.getElementById("agregarPalabras").style.display = 'none';
+        document.getElementById("botonTraducir").style.display = 'none';
+      }
+    }
+
+    // Guardar la traducción del nuevo idioma
+    function guardarTraduccion() {
+      const palabraEspañol = document.getElementById("palabraEspañol").value.trim().toLowerCase();
+      const palabraIdioma = document.getElementById("palabraIdioma").value.trim().toLowerCase();
+
+      if (palabraEspañol && palabraIdioma) {
+        if (!idiomas[idiomaActivo]) {
+          idiomas[idiomaActivo] = {};
+        }
+
+        idiomas[idiomaActivo][palabraEspañol] = palabraIdioma;
+        document.getElementById("palabraEspañol").value = '';
+        document.getElementById("palabraIdioma").value = '';
+
+        // Guardar los idiomas en LocalStorage
+        localStorage.setItem('idiomas', JSON.stringify(idiomas));
+
+        alert('Traducción guardada correctamente.');
+      } else {
+        alert("Por favor, ingresa ambas palabras.");
+      }
+    }
+
+    // Crear un nuevo idioma
+    function crearNuevoIdioma() {
+      document.getElementById("nombreIdioma").value = '';
+      document.getElementById("agregarPalabras").style.display = 'none';
+      document.getElementById("botonTraducir").style.display = 'none';
+      document.getElementById("botonCrearNuevoIdioma").style.display = 'none';
+      idiomaActivo = '';
+    }
+
+    // Cargar idiomas guardados desde LocalStorage
+    function cargarIdiomas() {
+      const idiomasGuardados = localStorage.getItem('idiomas');
+      if (idiomasGuardados) {
+        idiomas = JSON.parse(idiomasGuardados);
+      }
+    }
+
+    // Traducir al idioma creado
+    function traducir() {
+      const entrada = document.getElementById("entrada").value.trim().toLowerCase();
+
+      if (entrada && idiomas[idiomaActivo] && idiomas[idiomaActivo][entrada]) {
+        const traduccion = idiomas[idiomaActivo][entrada];
+        document.getElementById("resultado").innerText = `Traducción: ${traduccion}`;
+      } else {
+        document.getElementById("resultado").innerText = "Palabra no encontrada en el idioma creado.";
+      }
+    }
+
+  </script>
+
+</body>
+</html>
